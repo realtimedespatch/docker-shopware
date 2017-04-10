@@ -1,27 +1,47 @@
-shop:
-  image: dnhsoft/shopware:5.2.9-php7
+shopware:
+  image: ffuenf/shopware
+  restart: always
+  volumes_from:
+    - data
+  volumes:
+    - ./logs:/var/log/apache2
   links:
    - db
-   - mailhog
   ports:
-   - "8000:80"
+   - "80:80"
+   - "443:443"
+  environment:
+      SERVERNAME: ${SERVERNAME}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      SHOPWARE_VERSION: ${SHOPWARE_VERSION}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
 db:
-  image: dnhsoft/mysql-utf8:5.7
+    image: mysql:5.7
+    restart: always
+    ports:
+        - "3307:3307"
+    volumes_from:
+        - dbdata
+    environment:
+        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        MYSQL_DATABASE: ${MYSQL_DATABASE}
+        MYSQL_USER: ${MYSQL_USER}
+        MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+dbdata:
+  image: cogniteev/echo
+  command: echo 'Database Data Container'
   volumes:
-   - ".database:/var/lib/mysql"
+    - /var/lib/mysql
 
-pma:
-  image: dnhsoft/phpmyadmin:4.6.3
-  links:
-   - db
-  ports:
-   - "8001:80"
-
-mailhog:
-  image: mailhog/mailhog
-  expose:
-   - "1025"
-   - "8025"
-  ports:
-  - "8025:8025"
+data:
+  image: cogniteev/echo
+  command: echo 'Data Container'
+  volumes:
+    - ./public:/var/www/html
