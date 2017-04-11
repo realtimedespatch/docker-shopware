@@ -1,47 +1,34 @@
-shopware:
-  image: ffuenf/shopware
-  restart: always
-  volumes_from:
-    - data
+shopwaredb:
+  image: mysql:5.5
+
+  environment:
+   - MYSQL_ROOT_PASSWORD=bitte_aendern
+
   volumes:
-    - ./logs:/var/log/apache2
+   - /var/lib/docker/persistent-volumes/shopware/db:/var/lib/mysql
+
+dbclient:
+  image: mysql:5.5
   links:
-   - db
+   - shopwaredb:mysql
+
+  command: sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -pbitte_aendern'
+
+shopware:
+  image: kurthuwig/shopware:latest
+
+  environment:
+   - PHPMYADMIN_PW=shopware
+
+   - DB_USER=shopware
+   - DB_PASSWORD=shopware
+   - DB_DATABASE=shopware
+   # - DB_HOST=
+   - DB_PORT=3306
+
+  volumes:
+   - /var/lib/docker/persistent-volumes/shopware/shopware/var/www/html:/var/www/html
+  links:
+   - shopwaredb:db
   ports:
    - "80:80"
-   - "443:443"
-  environment:
-      SERVERNAME: ${SERVERNAME}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      SHOPWARE_VERSION: ${SHOPWARE_VERSION}
-      MYSQL_HOST: ${MYSQL_HOST}
-      MYSQL_PORT: ${MYSQL_PORT}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-
-db:
-    image: mysql:5.7
-    restart: always
-    ports:
-        - "3307:3307"
-    volumes_from:
-        - dbdata
-    environment:
-        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-        MYSQL_DATABASE: ${MYSQL_DATABASE}
-        MYSQL_USER: ${MYSQL_USER}
-        MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-
-dbdata:
-  image: cogniteev/echo
-  command: echo 'Database Data Container'
-  volumes:
-    - /var/lib/mysql
-
-data:
-  image: cogniteev/echo
-  command: echo 'Data Container'
-  volumes:
-    - ./public:/var/www/html
